@@ -8,7 +8,7 @@ The master list for our product images.
 
 *SKU-specific images* go in photos/[product category]/[product name]/[SKU]/[photo-here-name-doesn't-matter].jpg
 
-*General product images*, as well as *editorial* and *header* images, go in photos/[product category]/[product name]/product/[photo-here-name-doesn't-matter].jpg.
+*General product images*, as well as potential *editorial* and *header* images, go in photos/[product category]/[product name]/product/[photo-here-name-doesn't-matter].jpg.
 
 #### Run the renamer script
 
@@ -22,4 +22,4 @@ Photos will be automatically renamed with a meaningful name (based on SKU or pro
 
 ## Uploading Manually
 
-You can drag photos from the *_live* folder to upload for now (script will soon support syncing automatically). When uploading, wait for each folder to complete uploading before dragging another (otherwise Shopify gets confused).
+You can drag photos from the *_live* folder after running the prepare, or better yet just run the publish script (bin/publish) to sync automatically. Note: when uploading manually, wait for each folder to complete uploading before dragging another (otherwise Shopify gets confused).

@@ -1,5 +1,7 @@
 #!/usr/bin/env ruby
 require_relative '../lib/app'
 
-App.select("./photos")
-App.validate("./photos")
+path = App.photos_dir
+App.rename(path)
+App.select(path)
+App.validate(path)

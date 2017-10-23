@@ -19,16 +19,17 @@ module Traversal
       Dir.entries(path)
     end
 
-    def is_product_directory?(full_path)
-      path.split('/').length == PRODUCT_DIR_DEPTH
+    def is_product_directory?(rel_path)
+      rel_path.split('/').length == PRODUCT_DIR_DEPTH
     end
 
     def handle_entry(entry)
       return if entry[0] == '.'
 
-      full_path = [path, entry].join('/')
+      full_path = ::File.expand_path([path, entry].join('/'))
+      rel_path = full_path.sub("#{App.root_dir}/", '')
 
-      if is_product_directory?(full_path)
+      if is_product_directory?(rel_path)
         Traversal::ProductDirectory.new(full_path).call
       elsif ::File.directory?(full_path)
         if entry[0] == '_'
@@ -37,7 +38,7 @@ module Traversal
           Traversal::Directory.new(full_path).call
         end
       else
-        App.log.warn "Found unexpected file: #{full_path}"
+        App.log.warn "Found unexpected file: #{rel_path}"
       end
     end
 

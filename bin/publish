@@ -1,4 +1,34 @@
 #!/usr/bin/env ruby
 require_relative '../lib/app'
 
-App.publish("./photos")
+success = begin
+  App.log.level = Logger::WARN
+  App.force_dry!
+  path = App.photos_dir
+  App.rename(path) && App.select(path) && App.validate(path)
+rescue => e
+  puts "ERROR: #{e.message}".red
+  nil
+end
+
+def report_failure(msg)
+  puts "\n\nPre-flight checks failed -- aborting publish until issues resolved:".red
+  App.errors.each do |err|
+    puts "\t- #{err}"
+  end
+  puts "\n\n"
+  exit 1 # Not so all good :/
+end
+
+if success
+  puts "✔ Pre-flight checks run successfully".green
+  App.force_wet!
+  if App.rename(path) && App.select(path) && App.validate(path) && App.publish(path)
+    puts "✔ All photos synced!".green
+    exit 0 # All good
+  else
+    report_failure "Publishing failed"
+  end
+else
+  report_failure "Pre-flight checks failed -- aborting publish until issues resolved:"
+end

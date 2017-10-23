@@ -85,6 +85,10 @@ module App
       @force_dry = true
     end
 
+    def force_wet!
+      @force_dry = nil
+    end
+
     def debug?
       !QUIET
     end

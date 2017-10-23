@@ -42,6 +42,7 @@ module Mirror
       raw_products.map do |raw|
         next if raw.vendor.downcase == 'lensabl'
         next if raw.vendor.downcase =~ /materials/
+        next if raw.title =~ /panda engraving/i
         Mirror::ProductInfo.new(raw)
       end.compact
     end

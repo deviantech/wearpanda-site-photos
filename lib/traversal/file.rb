@@ -71,6 +71,8 @@ module Traversal
       base = parts[part]
       if part == 'product'
         base = base.sub(/ - \d{9,20}$/, '')
+        base = base.sub(/ultralight/, '')
+        base = base.sub(/rx/, '')
       end
 
       base.downcase.strip.gsub(/\s/, '_')
