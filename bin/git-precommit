@@ -1,0 +1,24 @@
+#!/usr/bin/env ruby
+
+require_relative '../lib/app'
+
+success = begin
+  App.log.level = Logger::WARN
+  App.force_dry!
+  path = App.photos_dir
+  App.rename(path) && App.select(path) && App.validate(path)
+rescue => e
+  puts "ERROR: #{e.message}".red
+  nil
+end
+
+if success
+  puts "✔ Pre-flight checks run successfully".green
+  exit 0 # All good
+else
+  puts "\n\nPre-flight checks failed -- aborting commit until issues resolved:".red
+  App.errors.each do |err|
+    puts "\t- #{err}"
+  end
+  exit 1 # Not so all good :/
+end

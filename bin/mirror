@@ -1,0 +1,7 @@
+#!/usr/bin/env ruby
+#
+# Create a local mirror of remote product photos.
+#
+
+require_relative '../lib/app'
+Mirror::Shopify.new( App.photos_dir ).call(overwrite: false)
