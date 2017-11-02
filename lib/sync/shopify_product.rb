@@ -49,7 +49,7 @@ module Sync
       App.log.info "\tUploading image(s) in parallel (#{images_to_add.length})"
       images_to_add {|i| App.log.debug "\t\t- #{i}" }
 
-      failures = Parallel.map(images_to_add, progress: App.quiet? ? nil : "\tUploading", in_threads: 5) do |img|
+      failures = Parallel.map(images_to_add, progress: App.quiet? ? nil : "\tUploading", in_threads: 10) do |img|
         ShopifyProductImage.new(product, img).upload
       end.select {|img| !img.uploaded? }
 

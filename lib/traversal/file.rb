@@ -21,7 +21,7 @@ module Traversal
         generate_name(
           use_hash ?
             [maybe_bang, file_hash, use_idx ? " #{idx}" : nil, maybe_upto, ext_name].compact.join :
-            [maybe_bang, middle_name(local: true), suffix].compact.join(' ')
+            [maybe_bang, middle_name(standalone: true), suffix].compact.join(' ')
         )
       ]
     end
@@ -30,13 +30,14 @@ module Traversal
     # whether or not they think it's a duplicate (and should get the name mangled with a GUID), so we need to put the unique
     # parts of the name near the beginning.
     def live_name
-      ::File.basename generate_name(
+      [
         transformed_part('product'),
-        middle_name,
+        middle_name(standalone: false), # Will have word dividers on either side
         idx,
         maybe_upto,
-        [name_base, ext_name].compact.join
-      )
+        '-',
+        [name_base, ext_name].join
+      ].join
     end
 
     private
@@ -81,13 +82,13 @@ module Traversal
       base.downcase.strip.gsub(/\s/, '_')
     end
 
-    def middle_name(local: false)
+    def middle_name(standalone:)
       case parts['sku']
-      when /header/ then 'header'
-      when /editorial/ then 'editorial'
+      when /header/ then standalone ? 'header' : "__header__"
+      when /editorial/ then standalone ? 'editorial' : "__editorial__"
       else
         sku = transformed_sku( parts['sku'] )
-        local ? sku : "__#{sku}__"
+        standalone ? sku : "___#{sku}___"
       end
     end
 

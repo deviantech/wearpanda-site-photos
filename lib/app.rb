@@ -42,7 +42,7 @@ module App
   DRY = ENV['DRY'] || false
   QUIET = ENV['QUIET'] || false
   REPROCESS_ALL_FILES = ENV['REPROCESS_ALL_FILES'] || false
-  UPTO_REGEX = /---upto\d+/
+  UPTO_REGEX = /---upto(\d+)/
 
   class << self
 
