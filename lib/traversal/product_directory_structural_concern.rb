@@ -13,6 +13,7 @@ module Traversal
     def verify_post_renaming
       entries.each do |entry|
         check_directly_publishable_entries_structure(entry) if direct_publish_dir?(entry)
+        check_sku_dir_has_selected_image(entry) unless non_sku_subdirs.include?(entry)
       end
     end
 
@@ -34,6 +35,13 @@ module Traversal
       return unless file.match( App::UPTO_REGEX )
       file_without_upto = file.sub(/\s*#{App::UPTO_REGEX}\s*/, '')
       ! files.include?(file_without_upto)
+    end
+
+    def check_sku_dir_has_selected_image(dir)
+      App.dipping_into(dir) do
+        next if entries.any? {|e| e[0] == '!' }
+        App.warn product_dir_name, "#{dir} has no images selected for publishing"
+      end
     end
 
     # Check _publish dirs to ensure matching basenames for any ---upto
