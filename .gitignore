@@ -1,4 +1,7 @@
 **/_live/
 test-photos/
+tmp/
 .env
+.meta
+.meta.json
 TODO.todo

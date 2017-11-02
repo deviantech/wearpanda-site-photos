@@ -1,34 +1,50 @@
 #!/usr/bin/env ruby
 require_relative '../lib/app'
 
-success = begin
-  App.log.level = Logger::WARN
-  App.force_dry!
-  path = App.photos_dir
-  App.rename(path) && App.select(path) && App.validate(path)
-rescue => e
-  puts "ERROR: #{e.message}".red
-  nil
-end
+PATH = App.photos_dir
 
 def report_failure(msg)
-  puts "\n\nPre-flight checks failed -- aborting publish until issues resolved:".red
-  App.errors.each do |err|
-    puts "\t- #{err}"
+  puts "\n\n#{msg}".red
+
+  App.errors.group_by {|e| e.split('] ')[0].split('/')[1] }.each do |group, errs|
+    puts
+    puts "#{group || 'Products'}"
+    errs.each do |e|
+      puts "\t- #{e}"
+    end
   end
   puts "\n\n"
   exit 1 # Not so all good :/
 end
 
-if success
-  puts "✔ Pre-flight checks run successfully".green
-  App.force_wet!
-  if App.rename(path) && App.select(path) && App.validate(path) && App.publish(path)
-    puts "✔ All photos synced!".green
-    exit 0 # All good
-  else
-    report_failure "Publishing failed"
-  end
-else
-  report_failure "Pre-flight checks failed -- aborting publish until issues resolved:"
+def set_log_level(default)
+  App.log.level = ENV['VERBOSE'] ? Logger::DEBUG : default
 end
+
+def preflight_ok
+  set_log_level Logger::WARN
+  App.force_dry!
+
+  App.rename(PATH) && App.prepare(PATH)
+rescue => e
+  puts "ERROR: #{e.message}".red
+  puts e.backtrace.take(3).map(&:yellow)
+  report_failure "Pre-flight checks failed -- aborting publish until all #{App.errors.count} issues resolved:"
+  nil
+end
+
+def publish_after_preflight
+  if preflight_ok
+    puts "✔ Pre-flight checks run successfully".green
+    set_log_level Logger::INFO
+    App.force_wet!
+    if App.rename(PATH) && App.prepare(PATH) && App.publish(PATH)
+      puts "✔ All photos synced!".green
+      exit 0 # All good
+    else
+      report_failure "Publishing failed"
+    end
+  end
+end
+
+publish_after_preflight

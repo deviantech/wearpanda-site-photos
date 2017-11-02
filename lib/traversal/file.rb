@@ -26,20 +26,23 @@ module Traversal
       ]
     end
 
+    # NOTE: Shopify appears to only consider the first (eh... ~30-36) characters of the filename when determining
+    # whether or not they think it's a duplicate (and should get the name mangled with a GUID), so we need to put the unique
+    # parts of the name near the beginning.
     def live_name
       ::File.basename generate_name(
-        name_base,
-        transformed_part('category'),
         transformed_part('product'),
         middle_name,
-        [idx, maybe_upto, ext_name].compact.join
+        idx,
+        maybe_upto,
+        [name_base, ext_name].compact.join
       )
     end
 
     private
 
     def ext_name
-      ::File.extname(entry)
+      ::File.extname(entry).downcase
     end
 
     def generate_name(*name_parts, divider: '-')
@@ -50,7 +53,7 @@ module Traversal
     end
 
     def name_base
-      'panda-bamboo'
+      "panda-bamboo-#{transformed_part('category')}"
     end
 
     def maybe_bang

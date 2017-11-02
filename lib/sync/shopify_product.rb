@@ -1,5 +1,6 @@
 module Sync
   class ShopifyProduct
+    GUID_REGEX = /_\w{8}-\w{4}-\w{4}-\w{4}-\w{12}\./
 
     attr_accessor :product_id, :local_images
     def initialize(product_id:, local_images:)
@@ -8,76 +9,120 @@ module Sync
     end
 
     def call
-      to_add = if remote_image_hashes.nil? || remote_image_hashes.keys.count == 0
-        App.log.info "No remote metafield mapping found -- #{App.dry? ? 'would clear' : 'clearing'} all existing images for #{product.title}".yellow
-        product.images.map(&:destroy) unless App.dry?
+      remove_unneeded_remotes
+      upload_missing_images
 
-        local_images
-      else
-        if (hashes_to_remove = remote_image_hashes.keys - local_image_hashes.keys).length > 0
-          filenames_to_remove = remote_image_hashes.values_at( *hashes_to_remove )
-          images_to_remove = product.images.select {|i| filenames_to_remove.include?( remote_image_filename(i.src) ) }
-          App.log.info "[#{product.title}] #{App.dry? ? 'Would remove' : 'Removing'} #{images_to_remove.length} images: [#{images_to_remove.map {|i| remote_image_filename(i.src)}}]" if images_to_remove.length > 0
-          images_to_remove.map(&:destroy) unless App.dry?
-        end
+      have = remote_image_filenames(force: true).map {|src| without_guid(src) }.sort
+      wanted = local_image_hashes.keys.sort
 
-        if (needed_hashes = local_image_hashes.keys - remote_image_hashes.keys).length > 0
-          needed_files = local_image_hashes.values_at( *needed_hashes )
-          App.log.info "[#{product.title}] #{App.dry? ? 'Would add' : 'Adding'} #{needed_files.length} new images"
-          needed_files
-        else []
-        end
+      unless have == wanted
+        extras = (have - wanted).any? ? "\n\tExtra: #{have - wanted}" : ''
+        missing = (wanted - have).any? ? "\n\tMissing: #{wanted-have}" : ''
+        App.log.fatal "[#{product.title}] Failed to properly sync images:#{extras}#{missing}\n\n"
       end
-
-      failures = to_add.map do |img|
-        ShopifyProductImage.new(product, img)
-      end.select do |img|
-        if App.dry?
-          App.log.info "\tWould upload: #{img.filename}".green
-        else
-          App.log.info "\tUploading: #{img.filename}".green
-          !img.upload
-        end
-      end
-
-      return if App.dry?
-
-      raise "Failed to save all images. Failed: #{failures.map(&:filename)}.".red unless failures.blank?
-      sync_remote_image_hashes
     rescue StandardError => e
       puts "\n\nWARNING: Error interrupted syncing, check product #{product_id} to be sure images weren't left in inconsistent state:\nhttps://#{ENV['SHOPIFY_SHOP']}.myshopify.com/admin/products/#{product_id}\n\n".red
       binding.pry
       raise e
+    rescue
+      puts "\n\nWARNING: Error interrupted syncing, check product #{product_id} to be sure images weren't left in inconsistent state:\nhttps://#{ENV['SHOPIFY_SHOP']}.myshopify.com/admin/products/#{product_id}\n\n".red
     end
 
     private
+
+    def remove_unneeded_remotes
+      return if App.dry?
+
+      images_to_remove.each do |img|
+        img.destroy rescue ActiveResource::ResourceNotFound
+      end
+    end
+
+    def upload_missing_images
+      return if images_to_add.blank?
+
+      if App.dry?
+        images_to_add.each {|img| App.log.info "\tWould upload: #{img}".green }
+        return
+      end
+
+      App.log.info "\tUploading image(s) in parallel (#{images_to_add.length})"
+      images_to_add {|i| App.log.debug "\t\t- #{i}" }
+
+      failures = Parallel.map(images_to_add, progress: App.quiet? ? nil : "\tUploading", in_threads: 5) do |img|
+        ShopifyProductImage.new(product, img).upload
+      end.select {|img| !img.uploaded? }
+
+      raise "Failed to save all images. Failed: #{failures.map(&:filename)}.".red unless failures.blank?
+      sync_remote_image_hashes
+    end
+
+    def images_to_remove
+      if remote_image_hashes.blank?
+        App.log.info "[#{product.title}] #{App.dry? ? 'would clear' : 'clearing'} all existing images"
+        product.images
+      else
+        removable_names = remote_image_hashes.select do |remote_name, remote_hash|
+          local_image_hashes[ without_guid(remote_name) ] != remote_hash
+        end.keys
+
+        # Shopify has been randomly appending GUIDs unnecessarily. If any have GUIDs, check if they ALSO have a non-GUID version.
+        # If so, remove the duplicate (w/ GUID) -- otherwise, we just ignore the GUID as best we can
+        removable_names += remote_image_hashes.select do |remote_name, remote_hash|
+          remote_name =~ GUID_REGEX && remote_image_hashes.detect {|rn, _| rn == without_guid(remote_name) }
+        end.keys
+
+        App.log.warn "[#{product.title}] #{App.dry? ? 'Would remove' : 'Removing'} #{removable_names.length} images: #{removable_names}" if removable_names.length > 0
+
+        product.images.select {|i| removable_names.include?( remote_image_filename(i.src) ) }
+      end
+    end
+
+    def images_to_add
+      @images_to_add ||= begin
+        product(force: true)
+
+        if remote_image_hashes.blank?
+          local_images
+        else
+          current_remotes_without_guids = remote_image_hashes.transform_keys {|k| without_guid(k) }
+          to_add = local_image_hashes.select do |local_name, local_hash|
+            current_remotes_without_guids[local_name] != local_hash
+          end.keys
+        end
+      end
+    end
+
+
 
     def remote_image_filename(src)
       src.split('/')[-1].split('?')[0]
     end
 
-    def remote_image_filenames
-      product.images.map {|i| remote_image_filename(i.src) }
+    # Note - automatically deletes any duplicated-by-filename images (shopify auto-appends a GUID)
+    def remote_image_filenames(force: false)
+      return @remote_image_filenames if defined?(@remote_image_filenames) && !force
+      @product = ShopifyAPI::Product.find(product_id) if force
+
+      @remote_image_filenames = product.images.map {|i| remote_image_filename(i.src) }
     end
 
     def sync_remote_image_hashes
-      if remote_image_hashes_metafield
-        unless remote_image_hashes_metafield.value == JSON.dump(local_image_hashes)
-          remote_image_hashes_metafield.value = JSON.dump(local_image_hashes)
-          remote_image_hashes_metafield.save
-          App.log.info "\tUpdated image hashes metafield to reflect new files"
-        end
-      else
-        product.add_metafield(
-          ShopifyAPI::Metafield.new({
-            namespace: "panda",
-            key: "image_hashes",
-            value: JSON.dump(local_image_hashes),
-            value_type: "string"
-          })
-        )
-        App.log.info "\tCreated new metafield to store image hashes"
+      removed = if remote_image_hashes_metafield
+        return if remote_image_hashes_metafield.value == JSON.dump(local_image_hashes)
+        remote_image_hashes_metafield.destroy
       end
+
+      product.add_metafield(
+        ShopifyAPI::Metafield.new({
+          namespace: "panda",
+          key: "image_hashes",
+          value: JSON.dump(local_image_hashes),
+          value_type: "string"
+        })
+      )
+
+      App.log.info "\t[#{product.title}] #{removed ? 'Updated image hashes metafield to reflect new files' : 'Created new metafield to store image hashes'}"
     end
 
     def remote_image_hashes_metafield
@@ -89,27 +134,31 @@ module Sync
 
       @remote_image_hashes = begin
         if raw = remote_image_hashes_metafield
-          hashes = JSON.parse(raw.value)
-          # If the remote metafield doesn't match the actual images uploaded, ignore it entirely
-          hashes.values.sort == remote_image_filenames.sort ? hashes : nil
+          JSON.parse(raw.value).tap do |hashes|
+            # If the remote metafield doesn't match the actual images uploaded, ignore it entirely
+            if hashes.keys.sort != remote_image_filenames.map {|src| without_guid(src) }.sort
+              App.log.warn "[#{product.title}] Remote hashes metafield is out of sync with uploaded products - ignoring"
+              return {}
+            end
+          end
+        else
+          App.log.info "[#{product.title}] No remote hashes metafield found"
+          {}
         end
       end
     end
 
     def local_image_hashes
-      @local_image_hashes ||= local_images.each_with_object({}) do |img, hash|
-        hash[ file_hash(img) ] = img
-      end.tap do |hashes|
-        App.warn(product.title, "appears to have duplicate local images") if hashes.keys.count < local_images.count
-      end
+      @local_image_hashes ||= App.image_hashes_for(local_images, product_name: product.title)
     end
 
-    def file_hash(img)
-      Digest::MD5.hexdigest( ::File.read(img) )
+    def product(force: false)
+      return @product if defined?(@product) && !force
+      @product = ShopifyAPI::Product.find(product_id)
     end
 
-    def product
-      @product ||= ShopifyAPI::Product.find(product_id)
+    def without_guid(raw)
+      raw.sub(GUID_REGEX, '.')
     end
 
   end

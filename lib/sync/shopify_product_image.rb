@@ -5,6 +5,7 @@ module Sync
     def initialize(product, filename)
       @product = product
       @filename = filename
+      @uploaded = nil
     end
 
     def upload
@@ -14,7 +15,13 @@ module Sync
         product_id: product.id
       }
 
-      img.save
+      @uploaded = img.save
+
+      self
+    end
+
+    def uploaded?
+      !! @uploaded
     end
 
     private

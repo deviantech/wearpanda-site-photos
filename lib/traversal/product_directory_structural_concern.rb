@@ -7,6 +7,11 @@ module Traversal
 
       entries.each do |entry|
         check_nested_product_dirs(entry) if ::File.directory?(entry)
+      end
+    end
+
+    def verify_post_renaming
+      entries.each do |entry|
         check_directly_publishable_entries_structure(entry) if direct_publish_dir?(entry)
       end
     end
@@ -18,17 +23,25 @@ module Traversal
       App.warn( view('.'), "missing required images: no header found" ) unless files.any? {|f| f =~ /header/ }
       App.warn( view('.'), "missing required images: no editorial found" ) unless files.any? {|f| f =~ /editorial/ }
       App.warn( view('.'), "missing required images: no product photos" ) if files.all? {|f| f =~ /header|editorial/ }
+
+      files.each do |file|
+        next unless missing_upto_match?(file, files)
+        raise InvalidStructure, "[#{product_dir_name}] _live file with upto is missing non-upto version: #{file} \n(checking #{files})"
+      end
+    end
+
+    def missing_upto_match?(file, files)
+      return unless file.match( App::UPTO_REGEX )
+      file_without_upto = file.sub(/\s*#{App::UPTO_REGEX}\s*/, '')
+      ! files.include?(file_without_upto)
     end
 
     # Check _publish dirs to ensure matching basenames for any ---upto
     def check_directly_publishable_entries_structure(dir)
       App.dipping_into(dir) do
         entries.each do |entry|
-          if entry.match( App::UPTO_REGEX )
-            entry_without_upto = entry.gsub(/\s*#{App::UPTO_REGEX}-?\s*/, '')
-            unless entries.include?(entry_without_upto)
-              raise InvalidStructure, "Publishable #{dir} file with upto is missing non-upto version: #{entry} (checking #{entries} against #{entry_without_upto})"
-            end
+          if missing_upto_match?(entry, entries)
+            raise InvalidStructure, "[#{product_dir_name}] Publishable #{dir} file with upto is missing non-upto version: #{entry} \n(checking #{entries})"
           end
         end
       end

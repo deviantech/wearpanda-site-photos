@@ -12,3 +12,4 @@ gem 'dotenv'
 
 gem 'typhoeus'
 gem 'ruby-progressbar'
+gem 'parallel'

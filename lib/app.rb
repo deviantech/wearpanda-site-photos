@@ -35,19 +35,13 @@ end
 
 
 # Usage: separate steps b/c otherwise dry run for publish can't tell what correct IDXes will be after renaming.
-#   DRY=1 bin/rename - will confirm naming
-#   bin/rename - will do renaming
-#   DRY=1 bin/select_live - will confirm moving images to live
-#   bin/select_live - will move images to live
-# TO BE IMPLEMENTED
-#   DRY=1 bin/publish - will confirm publishing
-#   bin/publish - will actually publish images
 
 class InvalidStructure < StandardError; end
 
 module App
   DRY = ENV['DRY'] || false
   QUIET = ENV['QUIET'] || false
+  REPROCESS_ALL_FILES = ENV['REPROCESS_ALL_FILES'] || false
   UPTO_REGEX = /---upto\d+/
 
   class << self
@@ -77,6 +71,10 @@ module App
       File.join(root_dir, "photos")
     end
 
+    def reprocess_all_files?
+      REPROCESS_ALL_FILES
+    end
+
     def dry?
       @force_dry || DRY
     end
@@ -89,8 +87,8 @@ module App
       @force_dry = nil
     end
 
-    def debug?
-      !QUIET
+    def quiet?
+      QUIET
     end
 
     # Debug in DRY, raise in production
@@ -102,14 +100,11 @@ module App
       if dry?
         log.warn message
       elsif error
+        log.fatal message
         raise error
       else
         raise (structural ? InvalidStructure : RuntimeError), message
       end
-    end
-
-    def optim
-      @@optim ||= ImageOptim.new(pngout: false) # Couldn't find binary
     end
 
     def action
@@ -120,12 +115,8 @@ module App
       call_with_action(path, :rename)
     end
 
-    def select(path)
-      call_with_action(path, :select)
-    end
-
-    def validate(path)
-      call_with_action(path, :validate)
+    def prepare(path)
+      call_with_action(path, :prepare)
     end
 
     def publish(path)
@@ -164,6 +155,25 @@ module App
       ensure
         FileUtils.chdir(cwd)
       end
+    end
+
+    def image_hashes_for(local_images, product_name: nil)
+      local_images.each_with_object({}) do |img, hash|
+        hash[ img ] = file_hash(img)
+      end.tap do |all_hashes|
+        # Little complex to allow duplicate hashes as long as they're in different categories (e.g. reusing product image as editorial)
+        hashes_by_type = all_hashes.group_by {|k,v| k.match(/(editorial|header)/)&.send(:[], 0) || 'product' }
+        images_by_type = local_images.group_by {|k| k.match(/(editorial|header)/)&.send(:[], 0) || 'product' }
+
+        hashes_by_type.each do |type, hashes|
+          imgs = images_by_type[type]
+          App.warn(product_name, "appears to have duplicate #{type} images") if hashes.uniq.count < imgs.count
+        end
+      end
+    end
+
+    def file_hash(img)
+      Digest::MD5.hexdigest( ::File.read(img) )
     end
 
   end

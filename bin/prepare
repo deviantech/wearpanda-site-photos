@@ -3,5 +3,4 @@ require_relative '../lib/app'
 
 path = App.photos_dir
 App.rename(path)
-App.select(path)
-App.validate(path)
+App.prepare(path)

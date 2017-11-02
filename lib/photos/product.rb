@@ -2,11 +2,11 @@ module Photos
   class Product < Base
 
     def min_width
-      1200
+      960
     end
 
     def min_height
-      720
+      640
     end
   end
 end
