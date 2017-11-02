@@ -36,8 +36,9 @@ module Traversal
         idx,
         maybe_upto,
         '-',
+        parts['sku'] =~ /editorial/ && bang? ? 'square-' : nil,
         [name_base, ext_name].join
-      ].join
+      ].compact.join
     end
 
     private
@@ -57,8 +58,12 @@ module Traversal
       "panda-bamboo-#{transformed_part('category')}"
     end
 
+    def bang?
+      entry[0] == '!'
+    end
+
     def maybe_bang
-      return '!' if entry[0] == '!'
+      return '!' if bang?
     end
 
     def has_upto?

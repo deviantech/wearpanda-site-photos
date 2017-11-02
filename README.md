@@ -18,7 +18,7 @@ Photos will be automatically renamed with a meaningful name (based on SKU or pro
 
 *SKU-specific images* and *general product photos*: any filename prefixed with a bang ('!') will be copied to the *_live* folder (with the appropriate filename) when the publish script is run.
 
-*Editorial and header images* will only be copied from the *_editorials* and *_headers* subfolders (since these will require manual action to create).
+*Editorial and header images* will only be copied from the *_editorials* and *_headers* subfolders (since these will require manual action to create). In these folders the ! is unnecessary, but any file prefixed with ! will expect a square editorial image rather than the usual dimensions (based on the golden ratio).
 
 ## Uploading Manually
 

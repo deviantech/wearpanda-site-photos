@@ -8,7 +8,8 @@ module Photos
 
       klass = case name
       when /header/ then Photos::Header
-      when /editorial/ then Photos::Editorial
+      when /editorial/
+        name =~ /square/ ? Photos::SquareEditorial : Photos::Editorial
       else Photos::Product
       end
 
@@ -63,7 +64,7 @@ module Photos
     def check_ratio
       (w, h) = image.dimensions
       w_to_h = w.to_f / h
-      unless equal_within_error?(w_to_h, expected_w_to_h)
+      unless equal_within_error?(w_to_h, expected_w_to_h.to_f)
         raise ProcessingError, "#{name}: dimensions #{w}x#{h} give ratio #{w_to_h}, expected #{expected_w_to_h}"
       end
     end

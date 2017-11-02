@@ -8,6 +8,7 @@ require_relative 'traversal'
 
 require_relative 'photos/base'
 require_relative 'photos/editorial'
+require_relative 'photos/square_editorial'
 require_relative 'photos/header'
 require_relative 'photos/product'
 
