@@ -14,7 +14,7 @@ module Mirror
       @structure = Mirror::Structure.new( remote_products )
 
       if ::File.exists?(root_path)
-        overwrite ? FileUtils.rm_rf(root_path) : raise("root path already exists: #{root_path}")
+        overwrite ? FileUtils.rm_rf(root_path) : App.log.warn("[Mirroring] Root path already exists: #{root_path}")
       end
 
       FileUtils.mkdir_p(root_path)
@@ -43,6 +43,7 @@ module Mirror
         next if raw.vendor.downcase == 'lensabl'
         next if raw.vendor.downcase =~ /materials/
         next if raw.title =~ /panda engraving/i
+        next unless raw.vendor.downcase == 'panda christmas shop'
         Mirror::ProductInfo.new(raw)
       end.compact
     end
@@ -53,6 +54,7 @@ module Mirror
           product_dirs.each do |dir, images|
             dir_path = [category, product, dir].join('/')
             FileUtils.mkdir_p( dir_path )
+            ::File.write("#{dir_path}/.keep", '')
 
             images.sort_by {|i| i.src }.each_with_index do |img|
               # They were live, so all filenames start with ! if in bangable folder

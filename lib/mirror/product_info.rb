@@ -15,6 +15,7 @@ module Mirror
 
       case name
       when 'locoporvino' then 'watches'
+      when 'christmasshop' then 'xmas-shop'
       else name
       end
     end
