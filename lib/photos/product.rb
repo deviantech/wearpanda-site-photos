@@ -2,11 +2,11 @@ module Photos
   class Product < Base
 
     def min_width
-      960
+      source_path =~ /xmas-shop/ ? 380 : 960
     end
 
     def min_height
-      640
+      source_path =~ /xmas-shop/ ? 380 : 640
     end
   end
 end

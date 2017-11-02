@@ -3,7 +3,7 @@ module Photos
 
   class << self
 
-    def for_path(path, name: nil)
+    def for_path(path, name: nil, source_path:)
       name ||= File.basename(path)
 
       klass = case name
@@ -13,16 +13,17 @@ module Photos
       else Photos::Product
       end
 
-      klass.new(path, name)
+      klass.new(path, name, source_path)
     end
   end
 
   class Base
 
-    attr_accessor :path, :name
-    def initialize(path, name)
+    attr_accessor :path, :name, :source_path
+    def initialize(path, name, source_path)
       @path = path
       @name = name
+      @source_path = source_path
     end
 
     def validate!
@@ -75,7 +76,6 @@ module Photos
         if name =~ App::UPTO_REGEX
           App.log.debug "#{name} is shorter than recommended (#{min_width}), but allowing it because it's an upto image".yellow
         else
-          binding.pry
           raise(ProcessingError, "#{name}: width #{w} smaller than min allowed (#{min_width})")
         end
       end

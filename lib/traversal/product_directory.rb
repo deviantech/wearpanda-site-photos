@@ -84,7 +84,7 @@ module Traversal
           App.log.debug "No changes to #{live_name}"
         else
           with_tempfile_path(data['source']) do |tmp_path|
-            photo = Photos.for_path( tmp_path, name: live_name )
+            photo = Photos.for_path( tmp_path, name: live_name, source_path: data['source'] )
             App.dry? ? photo.validate! : photo.process!
 
             App.log.info "#{App.dry? ? 'Would mark' : 'marked'} #{prev ? 'changed' : 'new'} image for publishing: #{live_name}"
