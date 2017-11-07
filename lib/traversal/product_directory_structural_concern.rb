@@ -66,20 +66,6 @@ module Traversal
     end
 
     def verify_expected_product_dirs(dirs)
-      if (sku_folders = dirs.select {|d| ::File.directory?(d) && !non_sku_subdirs.include?(d) }).length > 0
-        App.dipping_into('product') do
-          entries.each do |entry|
-            next unless entry[0] == '!'
-            if sku_folders.length == 1
-              puts "WARNING: #{App.dry? ? 'would move' : 'moving'} !-image in product folder to the only SKU folder (#{sku_folders.first}): #{entry}".red
-              FileUtils.mv entry, "../#{sku_folders.first}/#{entry}" unless App.dry?
-            else
-              raise InvalidStructure, "Product has SKUs, so product directory should not contain any '!'-containing filenames (#{view entry})"
-            end
-          end
-        end
-      end
-
       dirs.each do |entry|
         next if non_sku_subdirs.include?(entry)
 
