@@ -30,7 +30,6 @@ rescue => e
   puts "ERROR: #{e.message}".red
   puts e.backtrace.take(3).map(&:yellow)
   report_failure "Pre-flight checks failed -- aborting publish until all #{App.errors.count} issues resolved:"
-  nil
 end
 
 def publish_after_preflight

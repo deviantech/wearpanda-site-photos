@@ -55,7 +55,12 @@ module Traversal
     end
 
     def name_base
-      "panda-bamboo-#{transformed_part('category')}"
+      base = transformed_part('category')
+      case base
+      when 'panda'      then 'wearpanda'
+      when 'xmas-shop'  then "panda-#{base}"
+      else "panda-bamboo-#{base}"
+      end
     end
 
     def bang?
@@ -81,10 +86,10 @@ module Traversal
       if part == 'product'
         base = base.sub(/ - \d{9,20}$/, '')
         base = base.sub(/ultralight/, '')
-        base = base.sub(/rx/, '')
+        base = base.sub(/rx.*/, '')
       end
 
-      base.downcase.strip.gsub(/\s/, '_')
+      base.downcase.strip.gsub(/\s/, '_').gsub(/[^-_\d\w]/, '-')
     end
 
     def middle_name(standalone:)

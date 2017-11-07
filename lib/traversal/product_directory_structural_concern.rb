@@ -19,9 +19,13 @@ module Traversal
 
     private
 
+    def no_header_needed?
+      path.include?('xmas-shop')
+    end
+
     def validate_has_necessary_photos!
       files = entries('_live')
-      App.warn( view('.'), "missing required images: no header found" ) unless files.any? {|f| f =~ /header/ }
+      App.warn( view('.'), "missing required images: no header found" ) unless files.any? {|f| f =~ /header/ } || no_header_needed?
       App.warn( view('.'), "missing required images: no editorial found" ) unless files.any? {|f| f =~ /editorial/ }
       App.warn( view('.'), "missing required images: no product photos" ) if files.all? {|f| f =~ /header|editorial/ }
 
