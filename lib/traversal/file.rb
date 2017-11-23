@@ -41,6 +41,10 @@ module Traversal
       ].compact.join
     end
 
+    def file_hash
+      Digest::MD5.hexdigest( ::File.read(full_path) )
+    end
+
     private
 
     def ext_name
@@ -105,10 +109,6 @@ module Traversal
     # Take off the size, e.g. for Traveler
     def transformed_sku(sku)
       sku.sub(/-(s|l)$/i, '')
-    end
-
-    def file_hash
-      Digest::MD5.hexdigest( ::File.read(full_path) )
     end
 
     PATH_PART_LABELS = ['sku', 'product', 'category']

@@ -23,6 +23,7 @@ module Traversal
         when :rename then rename_photos
         when :prepare then prepare_photos
         when :publish then publish_photos
+        when :block then instance_eval(&App.block)
         else raise "Unknown action: #{App.action}"
         end
       end

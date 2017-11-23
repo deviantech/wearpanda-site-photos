@@ -28,3 +28,29 @@ You can drag photos from the *_live* folder after running the prepare, or better
 
 The publish script (bin/publish) is run as the git pre-commit hook... if you want to check in files that aren't yet valid (ideally only while setting up the initial mirroring), commit with `git commit --no-verify`.
 
+## One-off Manipulation
+
+There's an `App.call_with_block` method that allows you to run arbitrary ruby code for each ProductDirectory. Use in a script like, for example:
+
+```ruby
+    #!/usr/bin/env ruby
+    require_relative '../lib/app'
+
+    dir = App.photos_dir
+
+    # Example: copying editorial photo to product dir if accidentally was moved over rather than copied
+    App.call_with_block(dir) do
+      next unless path =~ /xmas/
+      next unless entries('_editorials').length == 1
+      editorial = Traversal::File.new(path+'/_editorials/'+entries('_editorials')[0], 1)
+      editorial_md5 = editorial.file_hash
+
+
+      if matched = select_live_photos.select {|k,d| !k.match(/editorial/) }.detect {|key, data| data['source_md5'] == editorial_md5 }
+        puts "\t[#{product_dir_name.cyan}] editorial has hash #{editorial_md5}, which matches photo #{matched[0]}".light_black
+      else
+        puts "\t[#{product_dir_name.cyan}] Would copy #{editorial.live_name} to products dir"
+        FileUtils.cp editorial.full_path, path+'/product/temp_from_editorial.jpg'
+      end
+    end
+```

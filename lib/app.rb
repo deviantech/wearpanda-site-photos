@@ -112,6 +112,10 @@ module App
       @@action
     end
 
+    def block
+      @@block
+    end
+
     def rename(path)
       call_with_action(path, :rename)
     end
@@ -127,6 +131,12 @@ module App
 
 
 
+    def call_with_block(path, &block)
+      @@action = :block
+      @@block = block
+      Traversal.call(path)
+      success?
+    end
 
     def call_with_action(path, action)
       @@action = action

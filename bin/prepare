@@ -1,6 +1,22 @@
 #!/usr/bin/env ruby
 require_relative '../lib/app'
 
-path = App.photos_dir
-App.rename(path)
-App.prepare(path)
+dir = App.photos_dir
+App.rename(dir)
+App.prepare(dir)
+
+# # Example: copying editorial photo to product dir if accidentally was moved over rather than copied
+# App.call_with_block(dir) do
+#   next unless path =~ /xmas/
+#   next unless entries('_editorials').length == 1
+#   editorial = Traversal::File.new(path+'/_editorials/'+entries('_editorials')[0], 1)
+#   editorial_md5 = editorial.file_hash
+
+
+#   if matched = select_live_photos.select {|k,d| !k.match(/editorial/) }.detect {|key, data| data['source_md5'] == editorial_md5 }
+#     puts "\t[#{product_dir_name.cyan}] editorial has hash #{editorial_md5}, which matches photo #{matched[0]}".light_black
+#   else
+#     puts "\t[#{product_dir_name.cyan}] Would copy #{editorial.live_name} to products dir"
+#     FileUtils.cp editorial.full_path, path+'/product/temp_from_editorial.jpg'
+#   end
+# end

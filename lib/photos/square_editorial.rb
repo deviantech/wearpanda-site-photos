@@ -6,11 +6,11 @@ module Photos
     end
 
     def min_height
-      500
+      380
     end
 
     def min_width
-      500
+      380
     end
 
   end
