@@ -61,8 +61,10 @@ module Sync
 
       parts = [alt_prefix, product.title]
 
+      show_sku_title = product.type != 'Watch'
+
       parts += if sku
-         [variants_for_sku(sku).first&.title, 'product image']
+         [show_sku_title ? variants_for_sku(sku).first&.title : nil, 'product image']
       elsif filename =~ /editorial/
         ['editorial image']
       else
@@ -74,8 +76,8 @@ module Sync
 
     def alt_prefix
       case product.type
-      when 'Watch' then "Panda Bamboo Watch -"
-      when /Sunglasses/ then "#{product.type} from Bamboo -"
+      when 'Watch' then "Wooden Watch made from Bamboo and Sustainable Materials -"
+      when /Sunglasses/ then "Eco-Friendly Bamboo #{product.type} -"
       end
     end
 
