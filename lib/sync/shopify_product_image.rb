@@ -37,14 +37,18 @@ module Sync
     end
 
     def variant_ids
-      return unless sku
-      product.variants.select {|v| v.sku == sku }.map(&:id)
+      variants_for_sku(sku).map(&:id)
     end
 
     def sku
       if matched = filename.match(/__(.+?)__/)
         matched[1]
       end
+    end
+
+    def variants_for_sku(sku)
+      return [] unless sku
+      product.variants.select {|v| v.sku == sku }
     end
 
     def position       # The first product image is at position 1 and is the "main" image for the product.
@@ -55,7 +59,24 @@ module Sync
       alt = exif.imagedescription.to_s
       return alt if alt.length > 0
 
-      nil
+      parts = [alt_prefix, product.title]
+
+      parts += if sku
+         [variants_for_sku(sku).first&.title, 'product image']
+      elsif filename =~ /editorial/
+        ['editorial image']
+      else
+        ['image']
+      end
+
+      parts.compact.join(' ')
+    end
+
+    def alt_prefix
+      case product.type
+      when 'Watch' then "Panda Bamboo Watch -"
+      when /Sunglasses/ then "#{product.type} from Bamboo -"
+      end
     end
 
     def exif
