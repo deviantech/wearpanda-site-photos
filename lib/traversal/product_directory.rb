@@ -81,7 +81,7 @@ module Traversal
         data = wanted[live_name]
         prev = prev_wanted[live_name]
 
-        if prev && prev['source'] == data['source'] && prev['source_md5'] == data['source_md5'] && ::File.exists?(live_name)
+        if ENV['FORCE_PROCESS_ALL'] != '1' && prev && prev['source'] == data['source'] && prev['source_md5'] == data['source_md5'] && ::File.exists?(live_name)
           App.log.debug "No changes to #{live_name}"
         else
           with_tempfile_path(data['source']) do |tmp_path|

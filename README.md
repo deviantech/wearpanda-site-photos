@@ -54,3 +54,15 @@ There's an `App.call_with_block` method that allows you to run arbitrary ruby co
       end
     end
 ```
+
+## EXIF + Alt Tags
+
+By default all metatag data is stripped from the photos in the optimization phase, but `EXIF_METADATA_TO_KEEP` (in photos/base`) stores a list of EXIF tags to persist to the live version.
+
+By default this includes imagedescription; if a value is present for this key, we use that to set the ALT tag when uploading product images to Shopify.
+
+For editing the EXIF metadata, we recommend https://github.com/hvdwolf/pyExifToolGUI/releases (clunky but functional) or, on Windows, https://github.com/jim-easterbrook/Photini (untried).
+
+### Force processing
+
+Note that changed EXIF tags aren't detected as file content changes. To force reprocessing all images (e.g. if you've just changed a bunch of EXIF data), run with FORCE_PROCESS_ALL=1.

@@ -1,6 +1,8 @@
 module Photos
   class ProcessingError < StandardError; end
 
+  EXIF_METADATA_TO_KEEP = %w(imagedescription)
+
   class << self
 
     def for_path(path, name: nil, source_path:)
@@ -98,8 +100,27 @@ module Photos
 
     def optimize!
       @@optim ||= ImageOptim.new(pngout: false) # Couldn't find binary
-      @@optim.optimize_image!(path) unless App.dry?
+      unless App.dry?
+        persisting_exif_keys do
+          @@optim.optimize_image!(path)
+        end
+      end
       App.log.debug "\t#{App.dry? ? 'Would optimize' : 'Optimized'} #{name}"
+    end
+
+    def persisting_exif_keys(&block)
+      exif_reader = MiniExiftool.new(source_path)
+      data = EXIF_METADATA_TO_KEEP.each_with_object({}) {|key, keep| keep[key] = exif_reader.send(key) }
+
+      block.call
+      exif_writer = MiniExiftool.new(path)
+
+      data.each do |key, value|
+        exif_writer.send("#{key}=", value)
+      end
+
+      # Note that by default it seems to save a few extra metafields as well. Oh well.
+      exif_writer.save
     end
 
     def equal_within_error?(given, expected)

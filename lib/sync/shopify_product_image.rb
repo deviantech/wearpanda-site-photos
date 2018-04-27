@@ -30,6 +30,7 @@ module Sync
       {
         variant_ids: variant_ids,
         position: position,
+        alt: alt_text,
       }.delete_if {|k,v| v.blank? }.merge({
         filename: filename,
       })
@@ -48,6 +49,17 @@ module Sync
 
     def position       # The first product image is at position 1 and is the "main" image for the product.
       return 1 if filename =~ /editorial/ && filename =~ /1/
+    end
+
+    def alt_text
+      alt = exif.imagedescription.to_s
+      return alt if alt.length > 0
+
+      nil
+    end
+
+    def exif
+      @exif ||= MiniExiftool.new(filename)
     end
 
   end

@@ -1,0 +1,6 @@
+nice: 10
+pngout: false # disable - can't find binary
+optipng:
+  level: 5
+jpegoptim:
+  strip: :all

@@ -1,6 +1,7 @@
 source "https://rubygems.org"
 
 gem 'mini_magick'
+gem 'mini_exiftool'
 gem 'colorize'
 gem 'pry'
 gem 'image_optim'
