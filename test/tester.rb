@@ -7,5 +7,4 @@ path = './test-photos'
 App.rename(path)
 App.prepare(path)
 
-
 App.publish(path)

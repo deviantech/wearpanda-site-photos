@@ -57,11 +57,11 @@ module Sync
 
     def alt_text
       alt = exif.imagedescription.to_s
-      return alt if alt.length > 0
+      return alt if alt.length > 0 && alt != 'Or the DESC field...'
 
       parts = [alt_prefix, product.title]
 
-      show_sku_title = product.type != 'Watch'
+      show_sku_title = product.product_type != 'Watch'
 
       parts += if sku
          [show_sku_title ? variants_for_sku(sku).first&.title : nil, 'product image']
@@ -75,9 +75,9 @@ module Sync
     end
 
     def alt_prefix
-      case product.type
+      case product.product_type
       when 'Watch' then "Wooden Watch made from Bamboo and Sustainable Materials -"
-      when /Sunglasses/ then "Eco-Friendly Bamboo #{product.type} -"
+      when /Sunglasses/ then "Eco-Friendly Bamboo #{product.product_type} -"
       end
     end
 

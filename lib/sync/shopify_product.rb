@@ -58,7 +58,7 @@ module Sync
     end
 
     def images_to_remove
-      if remote_image_hashes.blank?
+      if ENV['FORCE_SYNC_ALL_IMAGES'] == '1' || remote_image_hashes.blank?
         App.log.info "[#{product.title}] #{App.dry? ? 'would clear' : 'clearing'} all existing images"
         product.images
       else
