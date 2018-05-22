@@ -41,7 +41,7 @@ module Sync
     end
 
     def sku
-      if matched = filename.match(/__(.+?)__/)
+      if matched = filename.match(/_?__(.+?)___?/)
         matched[1]
       end
     end
@@ -51,7 +51,7 @@ module Sync
       product.variants.select {|v| v.sku == sku }
     end
 
-    def position       # The first product image is at position 1 and is the "main" image for the product.
+    def position # The first product image is at position 1 and is the "main" image for the product.
       return 1 if filename =~ /editorial/ && filename =~ /1/
     end
 

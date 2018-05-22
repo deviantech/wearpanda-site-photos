@@ -34,7 +34,7 @@ end
 
 def publish_after_preflight
   if preflight_ok
-    puts "✔ Pre-flight checks run successfully".green
+    puts "✔ Pre-flight checks ran successfully".green
     set_log_level Logger::INFO
     App.force_wet!
     if App.rename(PATH) && App.prepare(PATH) && App.publish(PATH)
