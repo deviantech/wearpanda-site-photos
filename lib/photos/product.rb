@@ -6,7 +6,7 @@ module Photos
     end
 
     def min_height
-      source_path =~ /xmas-shop/ ? 380 : 640
+      source_path =~ /xmas-shop/ ? 380 : 625
     end
   end
 end
