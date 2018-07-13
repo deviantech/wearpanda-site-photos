@@ -146,7 +146,7 @@ module Traversal
     end
 
     def direct_publish_dir?(dir)
-      %w(_editorials _headers).include?(dir)
+      %w(_editorials _headers product).include?(dir)
     end
 
     def rename_files_in(dir)
