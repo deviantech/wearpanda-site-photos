@@ -10,7 +10,8 @@ module Photos
     end
 
     def min_width
-      2048
+      # 2048
+      2002 # :/
     end
 
   end
