@@ -67,7 +67,7 @@ module Photos
     def check_ratio
       (w, h) = image.dimensions
       w_to_h = w.to_f / h
-      unless equal_within_error?(w_to_h, expected_w_to_h.to_f)
+      unless equal_within_error?(w_to_h, expected_w_to_h)
         raise ProcessingError, "#{name}: dimensions #{w}x#{h} give ratio #{w_to_h}, expected #{expected_w_to_h}"
       end
     end
@@ -123,12 +123,14 @@ module Photos
       exif_writer.save
     end
 
-    def equal_within_error?(given, expected)
-      places = expected.to_s.split('.')[1].length
-      allowed_variance = 1.0 / (10 ** places)
-      adjusted = round_to_places(given, places)
+    def equal_within_error?(given, expectedMaybeArray)
+      Array(expectedMaybeArray).any? do |expected|
+        places = expected.to_f.to_s.split('.')[1].length
+        allowed_variance = 1.0 / (10 ** places)
+        adjusted = round_to_places(given, places)
 
-      (adjusted <= expected + allowed_variance) && (adjusted >= expected - allowed_variance)
+        (adjusted <= expected + allowed_variance) && (adjusted >= expected - allowed_variance)
+      end
     end
 
     def round_to_places(float, places = 3)
