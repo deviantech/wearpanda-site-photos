@@ -61,6 +61,17 @@ module Traversal
       validate_has_necessary_photos!
     end
 
+    def maybe_overwrite_original(original, processed)
+      if ENV['OVERWRITE_ORIGINALS']
+        if ENV['OVERWRITE_ORIGINALS'] == 'I_ACCEPT_THE_DANGER'
+          ::FileUtils.rm(original)
+          ::FileUtils.cp(processed, original)
+        else
+          raise "To confirm you truly want to overwrite all original files with their post-processed versions, set OVERWRITE_ORIGINALS to I_ACCEPT_THE_DANGER".red
+        end
+      end
+    end
+
     def with_tempfile_path(path, &block)
       temp = Tempfile.new
       begin
@@ -69,6 +80,7 @@ module Traversal
 
         block.call(temp.path)
       ensure
+        maybe_overwrite_original(path, temp) unless App.dry?
         temp.close
         temp.unlink
       end
