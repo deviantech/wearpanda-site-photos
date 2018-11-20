@@ -1,10 +1,15 @@
 module Sync
   class ShopifyProductImage
 
-    attr_accessor :product, :filename
+    attr_accessor :product, :filename, :sku, :num_for_sku
     def initialize(product, filename)
       @product = product
       @filename = filename
+
+      matched = filename.match(/_?__(.+?)___?(\d+)?/) || []
+      @sku = matched[1]
+      @num_for_sku = matched[2].to_i
+
       @uploaded = nil
     end
 
@@ -15,7 +20,9 @@ module Sync
         product_id: product.id
       }
 
-      @uploaded = img.save
+      if @uploaded = img.save
+        maybe_update_primary_variant_image(img)
+      end
 
       self
     end
@@ -36,19 +43,21 @@ module Sync
       })
     end
 
-    def variant_ids
-      variants_for_sku(sku).map(&:id)
-    end
+    def maybe_update_primary_variant_image(img)
+      return unless num_for_sku == 1
 
-    def sku
-      if matched = filename.match(/_?__(.+?)___?/)
-        matched[1]
+      variants.each do |v|
+        v.image_id = img.id
+        v.save
       end
     end
 
-    def variants_for_sku(sku)
-      return [] unless sku
-      product.variants.select {|v| v.sku == sku }
+    def variant_ids
+      variants.map(&:id)
+    end
+
+    def variants
+      sku ? product.variants.select {|v| v.sku == sku } : []
     end
 
     def position # The first product image is at position 1 and is the "main" image for the product.
@@ -64,7 +73,7 @@ module Sync
       show_sku_title = product.product_type != 'Watch'
 
       parts += if sku
-         [show_sku_title ? variants_for_sku(sku).first&.title : nil, 'product image']
+         [show_sku_title ? variants.first&.title : nil, 'product image']
       elsif filename =~ /editorial/
         ['editorial image']
       else
