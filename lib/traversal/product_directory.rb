@@ -192,7 +192,7 @@ module Traversal
       return if old_path == new_path
       puts "#{App.dry? ? 'Would rename' : 'Renaming'}: #{view(old_path)} -> #{view(new_path)}".yellow
       raise(InvalidStructure,"Trying to rename from non-existant source: #{view old_path}") unless ::File.exists?(old_path)
-      raise(InvalidStructure,"Trying to overwrite file: #{view new_path}") if ::File.exists?(new_path)
+      raise(InvalidStructure,"Trying to overwrite file: #{view new_path}") if ::File.exists?(new_path) && !ENV['OVERWRITE_ORIGINALS']
 
       ::File.rename(old_path, new_path) unless App.dry?
     end

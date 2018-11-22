@@ -48,7 +48,11 @@ module Sync
 
       variants.each do |v|
         v.image_id = img.id
-        v.save
+        if v.save
+          puts "Set #{v.title} [#{v.sku}]: #{img.filename}".green
+        else
+          puts "FAILED SETTING #{v.title} [#{v.sku}]: #{img.filename}".red
+        end
       end
     end
 

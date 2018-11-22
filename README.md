@@ -69,6 +69,10 @@ For editing the EXIF metadata, we recommend https://github.com/hvdwolf/pyExifToo
 
 Note that changed EXIF tags aren't detected as file content changes. To force reprocessing all images (e.g. if you've just changed a bunch of EXIF data), run with FORCE_PROCESS_ALL=1.
 
+Similarly, to force _uploading_ even if the metadata hashes imply upload isn't needed, run with FORCE_SYNC_ALL_IMAGES=1.
+
+Finally, to effectively remove all local \_live images and reprocess all: REPROCESS_ALL_FILES=1.
+
 ### Only process specific product
 
 e.g. `ONLY_TRAVERSE_PRODUCT="sunglasses/robinson - 9315805897" bin/publish` will only publish the specified product.
@@ -76,3 +80,8 @@ e.g. `ONLY_TRAVERSE_PRODUCT="sunglasses/robinson - 9315805897" bin/publish` will
 ### Overwriting the original photos
 
 By default all resizing, optimizing, etc. is done to a copy of the photo but the originals aren't changed (to enable storing e.g. higher resolution originals). If you run with `OVERWRITE_ORIGINALS=I_ACCEPT_THE_DANGER`, the originals will be overwritten with the post-processed versions (to enable e.g. no need to reduplicate all optimization steps on each deploy).
+
+### Site not updating
+
+Note that setting the variant-image to the #1 image for the associated SKU doesn't appear to be syncing correctly. When in doubt, use bamboo-habitat's `bin/oneoffs/set-variant-images.rb`.
+
